@@ -1,5 +1,6 @@
 # ============================================================
-#   LIMPIEZA DE DATOS + REGRESIÓN + SIGNIFICANCIAS + ANOVA
+#   LIMPIEZA DE DATOS + MODELO + SIGNIFICANCIAS + ANOVA
+#   Guardando resultados en "resultadosDatosLimpios"
 # ============================================================
 
 library(dplyr)
@@ -9,24 +10,8 @@ library(dplyr)
 # ------------------------------------------------------------
 data <- readRDS("data/datos_analysis.rds")
 
-# Mostrar estructura
-print("Variables disponibles en el dataset:")
-print(names(data))
-
 # ------------------------------------------------------------
-# 2. Verificar variables requeridas
-# ------------------------------------------------------------
-vars_requeridas <- c("inglabo", "p6800", "p6850", "rama2d_r4")
-
-faltantes <- vars_requeridas[!vars_requeridas %in% names(data)]
-
-if(length(faltantes) > 0){
-  stop(paste("ERROR: Las siguientes variables NO existen en el dataset:",
-             paste(faltantes, collapse = ", ")))
-}
-
-# ------------------------------------------------------------
-# 3. Eliminar outliers por IQR
+# 2. Eliminar outliers por IQR
 # ------------------------------------------------------------
 remove_outliers_iqr <- function(df) {
   df %>% mutate(across(where(is.numeric), function(x) {
@@ -44,30 +29,30 @@ remove_outliers_iqr <- function(df) {
 data_clean <- remove_outliers_iqr(data)
 
 # ------------------------------------------------------------
-# 4. Transformación log1p(inglabo)
+# 3. Transformación log1p(INGLABO)
 # ------------------------------------------------------------
-data_clean <- data_clean %>% mutate(log_inglabo = log1p(inglabo))
+data_clean <- data_clean %>% mutate(log_inglabo = log1p(INGLABO))
 
 # ------------------------------------------------------------
-# 5. Convertir rama2d_r4 en factor
+# 4. Dummies RAMA2D_R4 (si es necesario)
 # ------------------------------------------------------------
-data_clean$rama2d_r4 <- as.factor(data_clean$rama2d_r4)
+data_clean$RAMA2D_R4 <- as.factor(data_clean$RAMA2D_R4)
 
 # ------------------------------------------------------------
-# 6. Modelo de regresión
+# 5. Modelo de regresión
 # ------------------------------------------------------------
 modelo <- lm(
-  log_inglabo ~ p6800 + p6850 + rama2d_r4,
+  log_inglabo ~ P6800 + P6850 + RAMA2D_R4,
   data = data_clean
 )
 
 # ------------------------------------------------------------
-# 7. Crear carpeta de resultados
+# 6. Crear carpeta de resultados
 # ------------------------------------------------------------
 dir.create("resultadosDatosLimpios", showWarnings = FALSE)
 
 # ------------------------------------------------------------
-# 8. Guardar resultados
+# 7. Guardar resultados
 # ------------------------------------------------------------
 
 # --- Coeficientes ---
@@ -83,7 +68,7 @@ write.csv(
   "resultadosDatosLimpios/anova.csv"
 )
 
-# --- R2 y ajustado ---
+# --- R2 y R2 ajustado ---
 r2_df <- data.frame(
   R2 = summary(modelo)$r.squared,
   R2_Ajustado = summary(modelo)$adj.r.squared
@@ -112,7 +97,7 @@ write.csv(
   row.names = FALSE
 )
 
-# --- Resumen completo ---
+# --- Resumen completo del modelo en TXT ---
 sink("resultadosDatosLimpios/ResumenModelo.txt")
 cat("=====================================================\n")
 cat("         RESUMEN COMPLETO DEL MODELO\n")
